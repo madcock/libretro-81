@@ -471,7 +471,11 @@ void retro_get_system_av_info( struct retro_system_av_info* info )
   info->geometry.max_height = WinB - WinT;
   info->geometry.aspect_ratio = 0.0f;
   info->timing.fps = 50.0;
+#if !defined(SF2000)
   info->timing.sample_rate = 44100.0;
+#else
+  info->timing.sample_rate = 11025.0;
+#endif
 }
 
 void retro_run( void )

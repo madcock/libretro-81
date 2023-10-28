@@ -158,7 +158,11 @@ extern "C" void MidiWriteBit( int Bit )
 extern "C" int sound_lowlevel_init( const char *device, int *freqptr, int *stereoptr )
 {
   (void)device;
+#if !defined(SF2000)
   *freqptr = 44100;
+#else
+  *freqptr = 11025;
+#endif
   *stereoptr = 1;
   return 0;
 }
