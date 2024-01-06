@@ -355,10 +355,20 @@ void retro_init( void )
   }
 
   memset( (void*)&state, 0, sizeof( state ) );
+  
+#if defined(SF2000)
+  enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_RGB565;
+
+  if ( !env_cb( RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt ) )
+  {
+    log_cb( RETRO_LOG_ERROR, "EightyOne needs RGB565\n" );
+  }
+#endif
 }
 
 bool retro_load_game( const struct retro_game_info* info )
 {
+#if !defined(SF2000)
   enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_RGB565;
 
   if (!info)
@@ -369,6 +379,7 @@ bool retro_load_game( const struct retro_game_info* info )
     log_cb( RETRO_LOG_ERROR, "EightyOne needs RGB565\n" );
     return false;
   }
+#endif
 
 #ifndef GIT_VERSION
   log_cb( RETRO_LOG_INFO, "\n%s", eo_gitstamp );
