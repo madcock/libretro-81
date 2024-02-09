@@ -72,7 +72,12 @@ int SelectAYReg;
 
 /* configuration */
 int sound_enabled=1;
+
+#if !defined(SF2000)
 int sound_freq=44100;
+#else
+int sound_freq=11025;
+#endif
 int sound_stereo=1;
 int sound_stereo_acb=0;		/* 1 for ACB stereo, else 0 */
 

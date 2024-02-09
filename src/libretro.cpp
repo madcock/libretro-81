@@ -18,9 +18,6 @@ extern "C"
 #include <gamedb/sha1.h>
 }
 
-#define RETRO_DEVICE_SINCLAIR_KEYBOARD RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_KEYBOARD, 0)
-#define RETRO_DEVICE_CURSOR_JOYSTICK   RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_JOYPAD, 0)
-
 #ifdef LOG_PERFORMANCE
   #define RETRO_PERFORMANCE_INIT( name )  do { static struct retro_perf_counter name = { #name }; if ( !name.registered && perf_cb.perf_register ) perf_cb.perf_register( &( name ) ) } while ( 0 )
   #define RETRO_PERFORMANCE_START( name ) do { if ( perf_cb.perf_start ) perf_cb.perf_start( &( name ) ) } while ( 0 )
@@ -39,7 +36,7 @@ typedef struct
   int      scaled;
   int      transp;
   int      ms;
-  unsigned devices[ 2 ];
+  unsigned input_device;
   uint32_t sha1[ 5 ];
 }
 state_t;
@@ -316,16 +313,12 @@ void retro_set_environment( retro_environment_t cb )
   env_cb = cb;
 
   static const struct retro_controller_description controllers[] = {
-    { "Cursor Joystick", RETRO_DEVICE_CURSOR_JOYSTICK },
-  };
-
-  static const struct retro_controller_description keyboards[] = {
-    { "Sinclair Keyboard", RETRO_DEVICE_SINCLAIR_KEYBOARD },
+    { "Keyboard", RETRO_DEVICE_KEYBOARD },
+    { "Virtual Keyboard", RETRO_DEVICE_JOYPAD },
   };
 
   static const struct retro_controller_info ports[] = {
     { controllers, sizeof( controllers ) / sizeof( controllers[ 0 ] ) }, // port 1
-    { keyboards,   sizeof( keyboards )   / sizeof( keyboards[ 0 ] )   }, // port 2
     { NULL, 0 }
   };
 
@@ -360,10 +353,20 @@ void retro_init( void )
   }
 
   memset( (void*)&state, 0, sizeof( state ) );
+  
+#if defined(SF2000)
+  enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_RGB565;
+
+  if ( !env_cb( RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt ) )
+  {
+    log_cb( RETRO_LOG_ERROR, "EightyOne needs RGB565\n" );
+  }
+#endif
 }
 
 bool retro_load_game( const struct retro_game_info* info )
 {
+#if !defined(SF2000)
   enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_RGB565;
 
   if (!info)
@@ -374,15 +377,16 @@ bool retro_load_game( const struct retro_game_info* info )
     log_cb( RETRO_LOG_ERROR, "EightyOne needs RGB565\n" );
     return false;
   }
+#endif
 
 #ifndef GIT_VERSION
   log_cb( RETRO_LOG_INFO, "\n%s", eo_gitstamp );
 #endif
-  
+
   memset( (void*)&state, 0, sizeof( state ) );
   state.size = info->size;
   state.data = malloc( info->size );
-  
+
   if ( !state.data )
   {
     log_cb( RETRO_LOG_ERROR, "Error allocating memory for game data\n" );
@@ -417,7 +421,7 @@ bool retro_load_game( const struct retro_game_info* info )
   memcpy( state.sha1, sha1.Message_Digest, sizeof(state.sha1) );
   
   update_variables();
-  retro_reset();
+  retro_reset(); // todo81 aqui falla
   keybovl_set( &zx81ovl );
   return true;
 }
@@ -474,7 +478,11 @@ void retro_get_system_av_info( struct retro_system_av_info* info )
   info->geometry.max_height = WinB - WinT;
   info->geometry.aspect_ratio = 0.0f;
   info->timing.fps = 50.0;
+#if !defined(SF2000)
   info->timing.sample_rate = 44100.0;
+#else
+  info->timing.sample_rate = 11025.0;
+#endif
 }
 
 void retro_run( void )
@@ -516,7 +524,7 @@ void retro_run( void )
   uint16_t* fb = TVFB + WinL + WinT * TVP / 2;
   uint16_t* fbKeyb = TVFB + WinL + WinT * TVPKEYB / 2;  
   eo_tick();
-  keybovl_update( input_state_cb, state.devices, fbKeyb, TVP / 2, state.transp, state.scaled, state.ms, 20 );
+  keybovl_update( input_state_cb, state.input_device, fbKeyb, TVP / 2, state.transp, state.scaled, state.ms, 20 );
   video_cb( (void*)fb, WinR - WinL, WinB - WinT, TVP );
 }
 
@@ -532,14 +540,15 @@ void retro_deinit( void )
 
 void retro_set_controller_port_device( unsigned port, unsigned device )
 {
-  if ( port < 2 )
+  if ( port < 1 )
   {
-    state.devices[ port ] = device;
+    state.input_device = device;
   }
 }
 
 void retro_reset( void )
 {
+
   eo_init( &state.cfg );
   
   if ( state.size )
@@ -547,8 +556,16 @@ void retro_reset( void )
     load_snap( "zx81_16k.z81" );
     
     zx81.TZXin = 1;
-    TZXFile.LoadFile( state.data, state.size, false );
+    log_cb( RETRO_LOG_INFO, "retro_reset 3.1\n" );
+    log_cb( RETRO_LOG_INFO, "state.size: %i\n", state.size );
+    log_cb( RETRO_LOG_INFO, "retro_reset 3.1.1\n" );
+    log_cb( RETRO_LOG_INFO, "state.data: %s\n", state.data );
+    log_cb( RETRO_LOG_INFO, "retro_reset 3.1.2\n" );
+    TZXFile.LoadFile( state.data, state.size, false ); // TODO81 aqui falla
+    log_cb( RETRO_LOG_INFO, "retro_reset 3.2\n" );
     TZXFile.Start();
+    log_cb( RETRO_LOG_INFO, "retro_reset 3.3\n" );
+    log_cb( RETRO_LOG_INFO, "retro_reset 4\n" );
     
     //eo_loadp( state.data, state.size );
   }

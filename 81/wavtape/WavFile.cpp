@@ -271,8 +271,13 @@ bool TWavFile::NewFile(void)
         Format.BlkLen=16;
         Format.fill=1;
         Format.NoChannels=1;
+#if !defined(SF2000)
         Format.SampleRate=44100;
         Format.BytesSec=44100;
+#else
+        Format.SampleRate=11025;
+        Format.BytesSec=11025;
+#endif
         Format.BytesSample=1;
         Format.BitsSample=8;
 
@@ -280,7 +285,12 @@ bool TWavFile::NewFile(void)
         Data.DataLen=0;
         Data.Data=NULL;
 
+#if !defined(SF2000)
         SampleRate=44100;
+#else
+        SampleRate=11025;
+#endif
+
         NoSamples=0;
         Bits=8;
         Stereo=false;
@@ -332,7 +342,11 @@ bool TWavFile::SetSample(unsigned int Pos, int Value)
 
 bool TWavFile::CanRecord(void)
 {
+#if !defined(SF2000)
         if (Format.SampleRate!=44100) return(false);
+#else
+        if (Format.SampleRate!=11025) return(false);
+#endif
         if (Format.BytesSample!=1) return(false);
         if (Format.BitsSample!=8) return(false);
         if (Stereo) return(false);
