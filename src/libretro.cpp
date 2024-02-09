@@ -421,7 +421,7 @@ bool retro_load_game( const struct retro_game_info* info )
   memcpy( state.sha1, sha1.Message_Digest, sizeof(state.sha1) );
   
   update_variables();
-  retro_reset(); // todo81 aqui falla
+  retro_reset();
   keybovl_set( &zx81ovl );
   return true;
 }
@@ -556,16 +556,8 @@ void retro_reset( void )
     load_snap( "zx81_16k.z81" );
     
     zx81.TZXin = 1;
-    log_cb( RETRO_LOG_INFO, "retro_reset 3.1\n" );
-    log_cb( RETRO_LOG_INFO, "state.size: %i\n", state.size );
-    log_cb( RETRO_LOG_INFO, "retro_reset 3.1.1\n" );
-    log_cb( RETRO_LOG_INFO, "state.data: %s\n", state.data );
-    log_cb( RETRO_LOG_INFO, "retro_reset 3.1.2\n" );
-    TZXFile.LoadFile( state.data, state.size, false ); // TODO81 aqui falla
-    log_cb( RETRO_LOG_INFO, "retro_reset 3.2\n" );
+    TZXFile.LoadFile( state.data, state.size, false );
     TZXFile.Start();
-    log_cb( RETRO_LOG_INFO, "retro_reset 3.3\n" );
-    log_cb( RETRO_LOG_INFO, "retro_reset 4\n" );
     
     //eo_loadp( state.data, state.size );
   }
