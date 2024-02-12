@@ -38,6 +38,13 @@ struct RWMEM
 #define EOF -1
 #endif
 
+
+#if defined(SF2000)
+static char data[65536];
+static char tempdata[ 65536 + 1 ];
+static unsigned char buffer1[65536+256], buffer2[65535+256];
+#endif
+
 static void rwmem( RWMEM* f, const void* data, size_t size )
 {
   f->buf = (const unsigned char*)data;
@@ -700,7 +707,10 @@ bool TTZXFile::LoadTAPFile(const void* buf, size_t size, bool Insert)
         int HeaderLen;
         int len;
         bool FirstBlock, AddSync, AddChecksum;
+
+        #if !defined(SF2000)
         char data[65536];
+        #endif
 
         rwmem( f, buf, size );
         this->FileName=FileName;
@@ -766,7 +776,9 @@ bool TTZXFile::LoadPFile( const void* data, size_t size, bool insert )
     NewTZX();
   }
   
+  #if !defined(SF2000)
   char tempdata[ 65536 + 1 ];
+  #endif
   
   tempdata[ 0 ] = 0x35 | 0x80; // P
   //tempdata[ 1 ] = 0;
@@ -775,7 +787,7 @@ bool TTZXFile::LoadPFile( const void* data, size_t size, bool insert )
   MoveBlock( AddGeneralBlock( tempdata, size + 1 ), CurBlock );
   Tape[ CurBlock ].Pause = 3000;
   GroupCount();
-  
+
   return true;
 }
 
@@ -786,7 +798,10 @@ bool TTZXFile::LoadT81File(const void* data, size_t size, bool Insert)
         
         char header[5];
         char fname[32], flen[16];
+
+        #if !defined(SF2000)
         unsigned char buffer1[65536+256], buffer2[65535+256];
+        #endif
 
         int length, zxnamelen,i;
 
