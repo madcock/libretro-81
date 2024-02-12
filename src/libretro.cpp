@@ -17,9 +17,10 @@ extern "C"
 {
 #include <gamedb/sha1.h>
 }
-
+#if !defined(SF2000)
 #define RETRO_DEVICE_SINCLAIR_KEYBOARD RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_KEYBOARD, 0)
 #define RETRO_DEVICE_CURSOR_JOYSTICK   RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_JOYPAD, 0)
+#endif
 
 #ifdef LOG_PERFORMANCE
   #define RETRO_PERFORMANCE_INIT( name )  do { static struct retro_perf_counter name = { #name }; if ( !name.registered && perf_cb.perf_register ) perf_cb.perf_register( &( name ) ) } while ( 0 )
@@ -39,7 +40,11 @@ typedef struct
   int      scaled;
   int      transp;
   int      ms;
+  #if !defined(SF2000)
   unsigned devices[ 2 ];
+  #else
+  unsigned input_device;
+  #endif
   uint32_t sha1[ 5 ];
 }
 state_t;
@@ -310,6 +315,7 @@ void retro_set_environment( retro_environment_t cb )
 {
   env_cb = cb;
 
+  #if !defined(SF2000)
   static const struct retro_controller_description controllers[] = {
     { "Cursor Joystick", RETRO_DEVICE_CURSOR_JOYSTICK },
   };
@@ -317,10 +323,18 @@ void retro_set_environment( retro_environment_t cb )
   static const struct retro_controller_description keyboards[] = {
     { "Sinclair Keyboard", RETRO_DEVICE_SINCLAIR_KEYBOARD },
   };
+  #else
+  static const struct retro_controller_description controllers[] = {
+    { "Keyboard", RETRO_DEVICE_KEYBOARD },
+    { "Virtual Keyboard", RETRO_DEVICE_JOYPAD },
+  };
+  #endif
 
   static const struct retro_controller_info ports[] = {
     { controllers, sizeof( controllers ) / sizeof( controllers[ 0 ] ) }, // port 1
+    #if !defined(SF2000)
     { keyboards,   sizeof( keyboards )   / sizeof( keyboards[ 0 ] )   }, // port 2
+    #endif
     { NULL, 0 }
   };
 
@@ -530,7 +544,11 @@ void retro_run( void )
   uint16_t* fb = TVFB + WinL + WinT * TVP / 2;
   uint16_t* fbKeyb = TVFB + WinL + WinT * TVPKEYB / 2;  
   eo_tick();
+  #if !defined(SF2000)
   keybovl_update( input_state_cb, state.devices, fbKeyb, TVP / 2, state.transp, state.scaled, state.ms, 20 );
+  #else
+  keybovl_update( input_state_cb, state.input_device, fbKeyb, TVP / 2, state.transp, state.scaled, state.ms, 20 );
+  #endif
   video_cb( (void*)fb, WinR - WinL, WinB - WinT, TVP );
 }
 
@@ -546,10 +564,17 @@ void retro_deinit( void )
 
 void retro_set_controller_port_device( unsigned port, unsigned device )
 {
+  #if !defined(SF2000)
   if ( port < 2 )
   {
     state.devices[ port ] = device;
   }
+  #else  
+  if ( port < 1 )
+  {
+    state.input_device = device;
+  }
+  #endif
 }
 
 void retro_reset( void )
