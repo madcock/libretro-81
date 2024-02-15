@@ -36,7 +36,11 @@ struct keybovl_t
 };
 
 void keybovl_set( keybovl_t* ovl_ );
+#if !defined(SF2000)
 void keybovl_update( retro_input_state_t input_cb, unsigned* devices, uint16_t* fb, int pitch, int transp, int scale, int ms, int dt );
+#else
+void keybovl_update( retro_input_state_t input_cb, unsigned input_device, uint16_t* fb, int pitch, int transp, int scale, int ms, int dt );
+#endif
 
 #ifdef __cplusplus
 }
